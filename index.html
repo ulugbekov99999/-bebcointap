@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тапай и Зарабатывай</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f8ff;
+        }
+        #balance, #dailyTask, #dailyReward {
+            font-size: 20px;
+            margin: 20px;
+        }
+        #tapButton, #upgradeButton, #claimRewardButton {
+            font-size: 20px;
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        #tapButton:hover, #upgradeButton:hover, #claimRewardButton:hover {
+            background-color: #45a049;
+        }
+        #successMessage {
+            font-size: 22px;
+            color: #4caf50;
+            display: none;
+            margin-top: 20px;
+        }
+        #upgradeInfo {
+            font-size: 18px;
+            margin: 10px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тапай и Зарабатывай</h1>
+    <div id="task">Задание: Достичь баланса 10!</div>
+    <div id="balance">Баланс: 0</div>
+    <button id="tapButton">Тапнуть!</button>
+    <button id="upgradeButton">Купить улучшение (Стоимость: 10)</button>
+    <div id="upgradeInfo">Текущий бонус за тап: x1</div>
+    <div id="successMessage">Поздравляем! Вы выполнили задание!</div>
+
+    <hr>
+    <h2>Ежедневное задание</h2>
+    <div id="dailyTask">Сделайте 50 тапов за сегодня!</div>
+    <div id="dailyReward">Награда за выполнение: +50 к балансу</div>
+    <button id="claimRewardButton" disabled>Получить награду</button>
+
+    <script>
+        // Основные данные
+        let balance = 0;
+        let tapBonus = 1; // Бонус за тап
+        let upgradeCost = 10; // Стоимость улучшения
+        const goal = 10; // Основная цель
+
+        // Данные ежедневного задания
+        const dailyTaskGoal = 50; // Количество тапов для выполнения задания
+        let dailyTaps = 0; // Счетчик тапов за день
+        const dailyReward = 50; // Награда за выполнение
+        let lastDailyReset = localStorage.getItem('lastDailyReset'); // Последний сброс задания
+
+        // Элементы DOM
+        const balanceElement = document.getElementById('balance');
+        const tapButton = document.getElementById('tapButton');
+        const upgradeButton = document.getElementById('upgradeButton');
+        const upgradeInfo = document.getElementById('upgradeInfo');
+        const successMessage = document.getElementById('successMessage');
+        const dailyTaskElement = document.getElementById('dailyTask');
+        const dailyRewardElement = document.getElementById('dailyReward');
+        const claimRewardButton = document.getElementById('claimRewardButton');
+
+        // Функция для загрузки данных
+        function loadPlayerData() {
+            const savedBalance = localStorage.getItem('playerBalance');
+            const savedTapBonus = localStorage.getItem('tapBonus');
+            const savedUpgradeCost = localStorage.getItem('upgradeCost');
+            const savedDailyTaps = localStorage.getItem('dailyTaps');
+
+            balance = savedBalance ? parseInt(savedBalance, 10) : 0;
+            tapBonus = savedTapBonus ? parseInt(savedTapBonus, 10) : 1;
+            upgradeCost = savedUpgradeCost ? parseInt(savedUpgradeCost, 10) : 10;
+            dailyTaps = savedDailyTaps ? parseInt(savedDailyTaps, 10) : 0;
+        }
+
+        // Функция для сохранения данных
+        function savePlayerData() {
+            localStorage.setItem('playerBalance', balance);
+            localStorage.setItem('tapBonus', tapBonus);
+            localStorage.setItem('upgradeCost', upgradeCost);
+            localStorage.setItem('dailyTaps', dailyTaps);
+        }
+
+        // Сброс ежедневного задания
+        function resetDailyTask() {
+            const now = new Date();
+            const today = now.toDateString();
+
+            if (lastDailyReset !== today) {
+                dailyTaps = 0;
+                lastDailyReset = today;
+                localStorage.setItem('lastDailyReset', today);
+                claimRewardButton.disabled = true;
+                dailyTaskElement.textContent = `Сделайте ${dailyTaskGoal} тапов за сегодня!`;
+            }
+        }
+
+        // Загружаем данные и проверяем ежедневное задание
+        loadPlayerData();
+        resetDailyTask();
+
+        // Обновляем интерфейс
+        balanceElement.textContent = `Баланс: ${balance}`;
+        upgradeButton.textContent = `Купить улучшение (Стоимость: ${upgradeCost})`;
+        upgradeInfo.textContent = `Текущий бонус за тап: x${tapBonus}`;
+        dailyTaskElement.textContent = `Сделайте ${dailyTaskGoal} тапов за сегодня! (Сделано: ${dailyTaps})`;
+
+        if (dailyTaps >= dailyTaskGoal) {
+            claimRewardButton.disabled = false;
+        }
+
+        // Обработчик кнопки "Тапнуть!"
+        tapButton.addEventListener('click', () => {
+            balance += tapBonus;
+            balanceElement.textContent = `Баланс: ${balance}`;
+            savePlayerData();
+
+            dailyTaps += 1;
+            dailyTaskElement.textContent = `Сделайте ${dailyTaskGoal} тапов за сегодня! (Сделано: ${dailyTaps})`;
+
+            if (dailyTaps >= dailyTaskGoal) {
+                claimRewardButton.disabled = false;
+            }
+        });
+
+        // Обработчик кнопки "Купить улучшение"
+        upgradeButton.addEventListener('click', () => {
+            if (balance >= upgradeCost) {
+                balance -= upgradeCost;
+                tapBonus += 1;
+                upgradeCost = Math.ceil(upgradeCost * 1.5);
+
+                balanceElement.textContent = `Баланс: ${balance}`;
+                upgradeButton.textContent = `Купить улучшение (Стоимость: ${upgradeCost})`;
+                upgradeInfo.textContent = `Текущий бонус за тап: x${tapBonus}`;
+                savePlayerData();
+            } else {
+                alert("Недостаточно средств для покупки улучшения!");
+            }
+        });
+
+        // Обработчик кнопки "Получить награду"
+        claimRewardButton.addEventListener('click', () => {
+            if (dailyTaps >= dailyTaskGoal) {
+                balance += dailyReward;
+                dailyTaps = 0; // Сбрасываем счетчик тапов
+                resetDailyTask(); // Сбрасываем ежедневное задание
+                balanceElement.textContent = `Баланс: ${balance}`;
+                savePlayerData();
+                alert(`Вы получили награду: +${dailyReward} к балансу!`);
+            }
+        });
+    </script>
+</body>
+</html>
